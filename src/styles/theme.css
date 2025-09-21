@@ -155,3 +155,52 @@ body {
   height: 260px;
   overflow: auto;
 }
+
+/* Summarize page with chat sidebar */
+.summarize-page-container {
+  transition: padding-right 0.3s ease;
+}
+
+.summarize-page-container.chat-open {
+  padding-right: 400px; /* Match chat panel width */
+}
+
+/* Enhanced PDF upload container */
+.pdf-upload-container {
+  min-height: 180px;
+  display: flex;
+  justify-content: center;
+}
+
+.pdf-upload-container > div {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (max-width: 991.98px) {
+  .summarize-page-container.chat-open {
+    padding-right: 0; /* Remove padding on mobile */
+  }
+
+  .chat-widget-panel--full {
+    width: 100%; /* Full width on mobile */
+  }
+}
+
+/* Full-width variant: stick below navbar, take full width and height under nav */
+.chat-widget-panel--full {
+  left: auto;
+  right: 0;
+  bottom: 0;
+  top: var(
+    --lexi-nav-height,
+    56px
+  ); /* default navbar height; can be overridden */
+  position: fixed;
+  width: 400px;
+  max-height: none;
+  border-right: 0 !important;
+}

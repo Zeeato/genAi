@@ -1,7 +1,39 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import ChatWidget from '@/components/ChatWidget'
+import { createContext, useContext, useState } from 'react'
+
+// Context for controlling chat visibility on Summarize page
+type SummarizeChatContextType = {
+  isOpen: boolean;
+  setOpen: (value: boolean) => void;
+}
+
+const SummarizeChatContext = createContext<SummarizeChatContextType | null>(null);
+
+// Hook to access chat state
+export const useSummarizeChat = () => useContext(SummarizeChatContext);
+
+// Component to render chat on Summarize page
+function SummarizeChatWidget() {
+  const context = useSummarizeChat();
+  if (!context) return null;
+  
+  return (
+    <ChatWidget 
+      showFab={false} 
+      panelVariant="full" 
+      isOpen={context.isOpen} 
+      onOpenChange={context.setOpen}
+    />
+  );
+}
 
 export default function App() {
+  const location = useLocation()
+  const onSummarize = location.pathname.startsWith('/summarize')
+  const onHome = location.pathname === '/'
+  const [chatOpen, setChatOpen] = useState(true);
+  
   return (
     <div>
       <nav className="navbar navbar-expand-lg bg-brand border-bottom sticky-top shadow-sm">
@@ -38,11 +70,26 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="py-4">
-        <div className="container">
-          <Outlet />
-        </div>
-      </main>
+      {/* On Home: hide FAB. On Summarize: full-width under navbar with control from page. Elsewhere: default floating. */}
+      {onSummarize ? (
+        <SummarizeChatContext.Provider value={{ isOpen: chatOpen, setOpen: setChatOpen }}>
+          <main className="py-4">
+            <div className="container">
+              <Outlet />
+            </div>
+          </main>
+          <SummarizeChatWidget />
+        </SummarizeChatContext.Provider>
+      ) : (
+        <>
+          <main className="py-4">
+            <div className="container">
+              <Outlet />
+            </div>
+          </main>
+          <ChatWidget showFab={!onHome} />
+        </>
+      )}
 
       <footer className="bg-body-tertiary py-4 border-top">
         <div className="container d-flex justify-content-between align-items-center small text-secondary">
@@ -50,7 +97,6 @@ export default function App() {
           <span className="d-none d-sm-inline">Legal insights, simplified.</span>
         </div>
       </footer>
-      <ChatWidget />
     </div>
   )
 }

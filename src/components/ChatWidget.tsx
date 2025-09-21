@@ -3,8 +3,34 @@ import { askQuestion } from '@/services/chatService'
 
 type Message = { role: 'user' | 'assistant'; text: string }
 
-export default function ChatWidget() {
-  const [open, setOpen] = useState(false)
+type ChatWidgetProps = {
+  showFab?: boolean
+  defaultOpen?: boolean
+  panelVariant?: 'floating' | 'full'
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+export default function ChatWidget({ 
+  showFab = true, 
+  defaultOpen = false, 
+  panelVariant = 'floating',
+  isOpen, 
+  onOpenChange
+}: ChatWidgetProps) {
+  const [internalOpen, setInternalOpen] = useState<boolean>(defaultOpen)
+  
+  // Use controlled or uncontrolled open state
+  const open = isOpen !== undefined ? isOpen : internalOpen
+  const setOpen = (value: boolean | ((prev: boolean) => boolean)) => {
+    const newValue = typeof value === 'function' ? value(open) : value;
+    if (onOpenChange) {
+      onOpenChange(newValue);
+    } else {
+      setInternalOpen(newValue);
+    }
+  };
+  
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', text: 'Hi! Paste context and ask anything about your document.' },
   ])
@@ -14,10 +40,21 @@ export default function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const handler = () => setOpen((v) => !v)
+    const handler = () => {
+      // In full-width variant, keep the panel always open (ignore toggle)
+      if (panelVariant === 'full') {
+        setOpen(true)
+      } else {
+        setOpen((v) => !v)
+      }
+    }
     window.addEventListener('lexiai:toggle-chat', handler as EventListener)
     return () => window.removeEventListener('lexiai:toggle-chat', handler as EventListener)
-  }, [])
+  }, [panelVariant])
+
+  useEffect(() => {
+    setOpen(!!defaultOpen)
+  }, [defaultOpen])
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50)
@@ -36,24 +73,28 @@ export default function ChatWidget() {
 
   return (
     <>
-      <button
-        aria-label="Open chatbot"
-        className="btn btn-primary chat-widget-fab shadow"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <i className="bi bi-chat-dots"></i>
-      </button>
+      {showFab && (
+        <button
+          aria-label="Open chatbot"
+          className="btn btn-primary chat-widget-fab shadow"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <i className="bi bi-chat-dots"></i>
+        </button>
+      )}
 
       {open && (
-        <div className="chat-widget-panel shadow-lg border rounded-3">
+        <div className={`chat-widget-panel shadow-lg border ${panelVariant === 'full' ? 'chat-widget-panel--full rounded-0' : 'rounded-3'}`}>
           <div className="d-flex align-items-center justify-content-between p-2 border-bottom bg-primary-subtle">
             <div className="d-flex align-items-center gap-2">
               <i className="bi bi-bounding-box-circles text-ink"></i>
               <strong className="text-ink">LexiAI Chat</strong>
             </div>
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => setOpen(false)} aria-label="Close">
-              <i className="bi bi-x"></i>
-            </button>
+            {panelVariant !== 'full' && (
+              <button className="btn btn-sm btn-outline-secondary" onClick={() => setOpen(false)} aria-label="Close">
+                <i className="bi bi-x"></i>
+              </button>
+            )}
           </div>
 
           <div className="p-2">
